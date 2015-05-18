@@ -12,6 +12,8 @@ import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.api.model.Link;
+import com.github.dockerjava.core.NameParser;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -663,14 +665,14 @@ public class DockerOrchestrator {
     private void push(Id id) {
         try {
             for (String otherTag : repo.conf(id).getTags()) {
-                ImageNameAndTag imageNameAndTag = new ImageNameAndTag(otherTag);
+                NameParser.ReposTag reposTag = NameParser.parseRepositoryTag(otherTag);
 
-                PushImageCmd pushImageCmd = docker.pushImageCmd(imageNameAndTag.getName()).withAuthConfig(docker.authConfig());
+                PushImageCmd pushImageCmd = docker.pushImageCmd(reposTag.repos).withAuthConfig(docker.authConfig());
 
-                if (imageNameAndTag.hasTag()) {
-                    pushImageCmd.withTag(imageNameAndTag.getTag());
+                if (StringUtils.isNotBlank(reposTag.tag)) {
+                    pushImageCmd.withTag(reposTag.tag);
                 }
-                logger.info("Pushing " + id + " (" + imageNameAndTag + ")");
+                logger.info("Pushing " + id + " (" + otherTag + ")");
 
                 InputStream inputStream = pushImageCmd.exec();
                 throwExceptionIfThereIsAnError(inputStream);
